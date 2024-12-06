@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>URL Shortener</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 400px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        input[type="url"] {
+            padding: 0.75rem;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 0.75rem;
+            font-size: 1rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #result {
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+
+        #short-link {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #007bff;
+            word-break: break-all;
+        }
+
+        #copy-btn {
+            background-color: #28a745;
+        }
+
+        #copy-btn:hover {
+            background-color: #218838;
+        }
+
+        .error {
+            margin-top: 1rem;
+            color: #dc3545;
+            text-align: center;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>URL Shortener</h1>
+        <form id="shorten-form">
+            <input type="url" id="long-url" placeholder="Enter your long URL here" required>
+            <button type="submit">Generate Short Link</button>
+        </form>
+        <div id="result" class="hidden">
+            <p>Your short link:</p>
+            <a href="#" target="_blank" id="short-link"></a>
+            <button id="copy-btn">Copy</button>
+        </div>
+        <div id="error" class="error hidden"></div>
+    </div>
+    <script>
+        // script.js
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('shorten-form');
+            const longUrlInput = document.getElementById('long-url');
+            const resultDiv = document.getElementById('result');
+            const shortLink = document.getElementById('short-link');
+            const copyBtn = document.getElementById('copy-btn');
+            const errorDiv = document.getElementById('error');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const longUrl = longUrlInput.value.trim();
+                if (!longUrl) {
+                    showError('Please enter a valid URL.');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('http://localhost:3000/generatelink', {
+                        method: 'post',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body:JSON.stringify({
+                            longUrl:longUrl
+                        })
+                    });
+                    if (response.ok) {
+                        const data=await response.json();
+                        const shortUrl = data.shortLink;
+                        shortLink.textContent = shortUrl;
+                        shortLink.href = shortUrl;
+                        resultDiv.classList.remove('hidden');
+                        errorDiv.classList.add('hidden');
+                    } else {
+                        showError(data.message || 'An error occurred.');
+                    }
+                } catch (error) {
+                    showError('Failed to connect to the server.');
+                    console.error(error);
+                }
+            });
+
+            copyBtn.addEventListener('click', () => {
+                const url = shortLink.href;
+                navigator.clipboard.writeText(url).then(() => {
+                    copyBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyBtn.textContent = 'Copy';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                });
+            });
+
+            function showError(message) {
+                errorDiv.textContent = message;
+                errorDiv.classList.remove('hidden');
+                resultDiv.classList.add('hidden');
+            }
+        });
+
+    </script>
+</body>
+
+</html>
